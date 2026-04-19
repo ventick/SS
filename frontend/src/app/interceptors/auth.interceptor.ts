@@ -1,7 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem('studysync_token');
+  const token = localStorage.getItem('studysync_access_token');
   if (!token) {
     return next(req);
   }
@@ -9,7 +9,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(
     req.clone({
       setHeaders: {
-        Authorization: `Token ${token}`
+        Authorization: `Bearer ${token}`
       }
     })
   );

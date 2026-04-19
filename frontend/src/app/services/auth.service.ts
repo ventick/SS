@@ -2,14 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, catchError, of, tap } from 'rxjs';
-import { ApiUser, LoginResponse } from '../models/api.models';
+import { ApiUser, LoginResponse, RegisterPayload } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly apiUrl = 'http://127.0.0.1:8000/api';
-  private readonly tokenKey = 'studysync_token';
+  private readonly tokenKey = 'studysync_access_token';
+  private readonly refreshTokenKey = 'studysync_refresh_token';
   private readonly userKey = 'studysync_user';
 
   private readonly currentUserSubject = new BehaviorSubject<ApiUser | null>(this.getStoredUser());
@@ -27,7 +28,20 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login/`, { username, password }).pipe(
       tap((response) => {
         const user = response.user ?? { id: 0, username };
-        localStorage.setItem(this.tokenKey, response.token);
+        localStorage.setItem(this.tokenKey, response.access);
+        localStorage.setItem(this.refreshTokenKey, response.refresh);
+        localStorage.setItem(this.userKey, JSON.stringify(user));
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
+  register(payload: RegisterPayload) {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/register/`, payload).pipe(
+      tap((response) => {
+        const user = response.user ?? { id: 0, username: payload.username };
+        localStorage.setItem(this.tokenKey, response.access);
+        localStorage.setItem(this.refreshTokenKey, response.refresh);
         localStorage.setItem(this.userKey, JSON.stringify(user));
         this.currentUserSubject.next(user);
       })
@@ -65,6 +79,7 @@ export class AuthService {
 
   private clearSession(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
     localStorage.removeItem(this.userKey);
     this.currentUserSubject.next(null);
   }

@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { GroupFormPayload, StudyGroup, Subject } from '../models/api.models';
@@ -16,7 +16,7 @@ import { SubjectsService } from '../services/subjects.service';
         <article class="panel">
           <div class="panel__head">
             <div>
-              <p class="eyebrow">{{ group.subject_details?.code ?? 'SUBJ' }}</p>
+              <p class="eyebrow">{{ (group.subject_details?.code ?? 'SUBJ') + (group.subject_details?.name ? ' - ' + group.subject_details?.name : '') }}</p>
               <h1>{{ group.title }}</h1>
               <p class="description">{{ group.description }}</p>
             </div>
@@ -111,14 +111,19 @@ import { SubjectsService } from '../services/subjects.service';
           }
         </article>
       </section>
-    } @else {
+    } @else if (errorMessage) {
+      <p class="error">{{ errorMessage }}</p>
+    } @else if (isLoading) {
       <p class="muted">Loading group details...</p>
+    } @else {
+      <p class="error">Group details could not be rendered.</p>
     }
   `,
   styles: [`
     .layout { display: grid; gap: 1rem; }
     .panel { background: rgba(255,255,255,.82); border: 1px solid rgba(20,48,79,.12); border-radius: 24px; padding: 1.5rem; box-shadow: 0 18px 40px rgba(20,48,79,.08); }
     .panel__head, .meta, .button-row, .member-item { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .panel__head { align-items: flex-start; }
     .eyebrow { margin: 0 0 .5rem; color: #b14e19; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
     h1, h2 { margin: 0 0 .6rem; }
     .description, .meta, .member-item span, .muted { color: #5a6a7f; line-height: 1.6; }
@@ -134,11 +139,13 @@ import { SubjectsService } from '../services/subjects.service';
     input, textarea, select { border-radius: 16px; border: 1px solid rgba(20,48,79,.14); padding: .95rem 1rem; font: inherit; background: #fff; }
     .member-list { display: grid; gap: .75rem; }
     .member-item { align-items: center; padding: .9rem 1rem; border: 1px solid rgba(20,48,79,.1); border-radius: 18px; background: rgba(255,255,255,.7); }
+    .member-item > div { display: flex; align-items: baseline; gap: .35rem; flex-wrap: wrap; }
     .success { color: #067647; font-weight: 700; margin: 1rem 0 0; }
     .error { color: #b42318; font-weight: 700; margin: 1rem 0 0; }
   `]
 })
 export class GroupDetailPageComponent {
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly groupsService = inject(GroupsService);
@@ -149,6 +156,7 @@ export class GroupDetailPageComponent {
   protected subjects: Subject[] = [];
   protected errorMessage = '';
   protected statusMessage = '';
+  protected isLoading = true;
   protected isEditing = false;
   protected readonly editForm: GroupFormPayload = {
     title: '',
@@ -205,9 +213,11 @@ export class GroupDetailPageComponent {
         this.isEditing = false;
         this.statusMessage = 'Group updated successfully.';
         this.errorMessage = '';
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = error?.error?.error ?? 'Could not update the group.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -218,12 +228,15 @@ export class GroupDetailPageComponent {
     }
 
     this.groupsService.joinGroup(this.group.id).subscribe({
-      next: () => {
-        this.statusMessage = 'You joined the group.';
+      next: (response) => {
+        this.group = response.group;
+        this.statusMessage = response.message;
         this.errorMessage = '';
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = error?.error?.error ?? 'Could not join the group.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -234,12 +247,15 @@ export class GroupDetailPageComponent {
     }
 
     this.groupsService.leaveGroup(this.group.id).subscribe({
-      next: () => {
-        this.statusMessage = 'You left the group.';
+      next: (response) => {
+        this.group = response.group;
+        this.statusMessage = response.message;
         this.errorMessage = '';
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = error?.error?.error ?? 'Could not leave the group.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -250,12 +266,15 @@ export class GroupDetailPageComponent {
     }
 
     this.groupsService.removeMember(this.group.id, userId).subscribe({
-      next: () => {
-        this.statusMessage = 'Member removed successfully.';
+      next: (response) => {
+        this.group = response.group;
+        this.statusMessage = response.message;
         this.errorMessage = '';
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = error?.error?.error ?? 'Could not remove the member.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -274,12 +293,17 @@ export class GroupDetailPageComponent {
   }
 
   private loadGroup(id: number): void {
+    this.isLoading = true;
     this.groupsService.getGroup(id).subscribe({
       next: (group) => {
         this.group = group;
+        this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = error?.error?.error ?? 'Could not load group details.';
+        this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { StudyGroup } from '../models/api.models';
 import { GroupsService } from '../services/groups.service';
@@ -37,7 +37,7 @@ import { GroupsService } from '../services/groups.service';
         @for (group of groups; track group.id) {
           <article class="card">
             <div class="card__meta">
-              <span>{{ group.subject_details?.code ?? 'SUBJ' }}</span>
+              <span>{{ (group.subject_details?.code ?? 'SUBJ') + (group.subject_details?.name ? ' - ' + group.subject_details?.name : '') }}</span>
               <span>{{ group.member_count ?? 0 }}/{{ group.max_members }} members</span>
             </div>
             <h2>{{ group.title }}</h2>
@@ -73,6 +73,7 @@ import { GroupsService } from '../services/groups.service';
   `]
 })
 export class GroupsPageComponent {
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly groupsService = inject(GroupsService);
 
   protected groups: StudyGroup[] = [];
@@ -91,10 +92,12 @@ export class GroupsPageComponent {
       next: (groups) => {
         this.groups = groups;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.errorMessage = error?.error?.error ?? 'Could not load groups from the API.';
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

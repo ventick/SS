@@ -2,6 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { GroupFormPayload, StudyGroup } from '../models/api.models';
 
+interface GroupActionResponse {
+  message: string;
+  group: StudyGroup;
+}
+
 @Injectable({ providedIn: 'root' })
 export class GroupsService {
   private readonly http = inject(HttpClient);
@@ -28,14 +33,14 @@ export class GroupsService {
   }
 
   joinGroup(id: number) {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/${id}/join/`, {});
+    return this.http.post<GroupActionResponse>(`${this.apiUrl}/${id}/join/`, {});
   }
 
   leaveGroup(id: number) {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/${id}/leave/`, {});
+    return this.http.post<GroupActionResponse>(`${this.apiUrl}/${id}/leave/`, {});
   }
 
   removeMember(groupId: number, userId: number) {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/${groupId}/remove-member/`, { user_id: userId });
+    return this.http.post<GroupActionResponse>(`${this.apiUrl}/${groupId}/remove-member/`, { user_id: userId });
   }
 }

@@ -1,22 +1,25 @@
 from django.urls import path
+
 from .views import (
-    login_view, 
-    logout_view, 
-    subject_list, 
-    GroupListCreateAPIView, 
     GroupDetailAPIView,
-    join_group,    
-    leave_group,   
-    remove_member  
+    GroupListCreateAPIView,
+    join_group,
+    leave_group,
+    login_view,
+    register_view,
+    logout_view,
+    remove_member,
+    subject_list,
 )
 
 urlpatterns = [
-    path('login/', login_view),
-    path('logout/', logout_view),
-    path('subjects/', subject_list),
-    path('groups/', GroupListCreateAPIView.as_view()),
-    path('groups/<int:pk>/', GroupDetailAPIView.as_view()),
-    path('groups/<int:pk>/join/', join_group),
-    path('groups/<int:pk>/leave/', leave_group),
-    path('groups/<int:pk>/remove-member/', remove_member),
+    path("login/", login_view, name="login"),
+    path("register/", register_view, name="register"),
+    path("logout/", logout_view, name="logout"),
+    path("subjects/", subject_list, name="subject-list"),
+    path("groups/", GroupListCreateAPIView.as_view(), name="group-list"),
+    path("groups/<int:pk>/", GroupDetailAPIView.as_view(), name="group-detail"),
+    path("groups/<int:pk>/join/", join_group, name="join-group"),
+    path("groups/<int:pk>/leave/", leave_group, name="leave-group"),
+    path("groups/<int:pk>/remove-member/", remove_member, name="remove-member"),
 ]

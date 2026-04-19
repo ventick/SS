@@ -32,8 +32,15 @@ export interface StudyGroup {
 }
 
 export interface LoginResponse {
-  token: string;
+  access: string;
+  refresh: string;
   user?: ApiUser;
+}
+
+export interface RegisterPayload {
+  username: string;
+  password: string;
+  confirm_password: string;
 }
 
 export interface GroupFormPayload {

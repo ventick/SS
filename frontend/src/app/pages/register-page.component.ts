@@ -5,17 +5,17 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Component({
-  selector: 'app-login-page',
+  selector: 'app-register-page',
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <section class="panel auth">
       <div>
-        <p class="eyebrow">Student Login</p>
-        <h1>Welcome back</h1>
-        <p class="description">Sign in to browse study groups, create your own group, and manage memberships.</p>
+        <p class="eyebrow">Student Registration</p>
+        <h1>Create your account</h1>
+        <p class="description">Sign up once and start creating subject-based study groups right away.</p>
       </div>
 
-      <form class="form" (ngSubmit)="login()">
+      <form class="form" (ngSubmit)="register()">
         <label>
           Username
           <input [(ngModel)]="username" name="username" type="text" required />
@@ -23,7 +23,12 @@ import { AuthService } from '../services/auth.service';
 
         <label>
           Password
-          <input [(ngModel)]="password" name="password" type="password" required />
+          <input [(ngModel)]="password" name="password" type="password" minlength="8" required />
+        </label>
+
+        <label>
+          Confirm password
+          <input [(ngModel)]="confirmPassword" name="confirmPassword" type="password" minlength="8" required />
         </label>
 
         @if (errorMessage) {
@@ -32,9 +37,9 @@ import { AuthService } from '../services/auth.service';
 
         <div class="actions">
           <button type="submit" [disabled]="isSubmitting">
-            {{ isSubmitting ? 'Signing in...' : 'Login' }}
+            {{ isSubmitting ? 'Creating account...' : 'Register' }}
           </button>
-          <a routerLink="/register" class="link-button">Create account</a>
+          <a routerLink="/login" class="link-button">Back to login</a>
         </div>
       </form>
     </section>
@@ -62,35 +67,46 @@ import { AuthService } from '../services/auth.service';
     .actions { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
     button, .link-button {
       justify-self: start; border: 0; border-radius: 999px; padding: .9rem 1.4rem;
-      background: #da6b2d; color: #fff; font-weight: 700; cursor: pointer;
-      text-decoration: none;
+      background: #da6b2d; color: #fff; font-weight: 700; cursor: pointer; text-decoration: none;
     }
     .link-button { background: #fff; color: #14304f; border: 1px solid rgba(20,48,79,.12); }
     .error { margin: 0; color: #b42318; font-weight: 600; }
   `]
 })
-export class LoginPageComponent {
+export class RegisterPageComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
   protected username = '';
   protected password = '';
+  protected confirmPassword = '';
   protected errorMessage = '';
   protected isSubmitting = false;
 
-  protected login(): void {
+  protected register(): void {
     this.errorMessage = '';
-    this.isSubmitting = true;
 
-    this.authService.login(this.username, this.password).subscribe({
-      next: () => {
-        this.isSubmitting = false;
-        this.router.navigate(['/groups']);
-      },
-      error: (error) => {
-        this.isSubmitting = false;
-        this.errorMessage = error?.error?.error ?? 'Login failed. Please check your credentials.';
-      }
-    });
+    if (this.password !== this.confirmPassword) {
+      this.errorMessage = 'Passwords do not match.';
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.authService
+      .register({
+        username: this.username,
+        password: this.password,
+        confirm_password: this.confirmPassword
+      })
+      .subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.router.navigate(['/groups']);
+        },
+        error: (error) => {
+          this.isSubmitting = false;
+          this.errorMessage = error?.error?.error ?? error?.error?.username?.[0] ?? 'Registration failed.';
+        }
+      });
   }
 }
